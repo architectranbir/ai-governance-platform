@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Send, Sparkles } from "lucide-react";
+import { Send } from "lucide-react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
 
@@ -38,18 +38,12 @@ function App() {
 
       setMessages((prev) => [
         ...prev,
-        {
-          role: "assistant",
-          text: data.answer || "No response received."
-        }
+        { role: "assistant", text: data.answer || "No response received." }
       ]);
     } catch {
       setMessages((prev) => [
         ...prev,
-        {
-          role: "assistant",
-          text: "Unable to connect to backend."
-        }
+        { role: "assistant", text: "Unable to connect to backend." }
       ]);
     } finally {
       setLoading(false);
@@ -64,33 +58,17 @@ function App() {
   };
 
   return (
-    <div className="page">
-
-      <aside className="sidebar">
-        <div className="brand">
-          <div className="brandIcon">
-            <Sparkles size={20} />
-          </div>
-          <div>
-            <h2>Standards AI</h2>
-            <p>Engineering Assistant</p>
-          </div>
-        </div>
-      </aside>
-
+    <div className="page single">
       <main className="main">
         <header className="topbar">
-          <div className="pill">Enterprise Engineering Assistant</div>
-          <h1>Engineering Standards Chatbot</h1>
+          <h1>Enterprise Engineering AI Assistant</h1>
         </header>
 
         <section className="chatPanel">
           <div className="messages">
             {messages.map((m, i) => (
               <div key={i} className={`messageRow ${m.role}`}>
-                <div className="avatar">
-                  {m.role === "assistant" ? "AI" : "You"}
-                </div>
+                <div className="avatar">{m.role === "assistant" ? "AI" : "You"}</div>
                 <div className="bubble">{m.text}</div>
               </div>
             ))}
@@ -112,7 +90,7 @@ function App() {
               onKeyDown={handleKey}
               placeholder="Ask about engineering standards..."
             />
-            <button onClick={askQuestion}>
+            <button onClick={askQuestion} disabled={loading || !question.trim()}>
               <Send size={18} />
             </button>
           </div>
