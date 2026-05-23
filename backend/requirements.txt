@@ -1,2 +1,5 @@
 fastapi
 uvicorn[standard]
+azure-identity
+azure-search-documents
+openai
