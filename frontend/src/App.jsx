@@ -1,5 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Send, FileText, Sparkles } from "lucide-react";
+import {
+  Send,
+  FileText,
+  Plus,
+  ShieldCheck,
+  Search,
+  MessageSquare,
+  Sparkles
+} from "lucide-react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
 
@@ -7,7 +15,7 @@ function App() {
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      text: "Hi, I can help you understand engineering standards and approved practices.",
+      text: "Hi, I can help you understand EWT engineering standards, GitHub controls, CI/CD practices, IaC governance, and deployment rules.",
       citations: []
     }
   ]);
@@ -53,7 +61,7 @@ function App() {
         ...prev,
         {
           role: "assistant",
-          text: "Unable to connect to the backend API.",
+          text: "I could not reach the backend API. Please check the Container App revision and API link.",
           citations: []
         }
       ]);
@@ -69,32 +77,64 @@ function App() {
     }
   }
 
+  const suggestedPrompts = [
+    "What is the EWT single-main-branch standard?",
+    "What are the branch protection requirements?",
+    "How should secrets be managed in Terraform repositories?"
+  ];
+
   return (
-    <div className="appShell">
-      <main className="mainPanel">
-        <header className="header">
-          <div className="badge">
-            <Sparkles size={15} />
-            Enterprise RAG Assistant
+    <div className="layout">
+      <aside className="sidebar">
+        <div className="brand">
+          <div className="brandMark"><Sparkles size={18} /></div>
+          <div>
+            <h2>Engineering AI</h2>
+            <p>Enterprise RAG Assistant</p>
           </div>
-          <h1>Enterprise Engineering AI Assistant</h1>
-          <p>Ask questions about engineering standards, GitHub controls, CI/CD, IaC, and governance.</p>
+        </div>
+
+        <button className="newChat">
+          <Plus size={16} />
+          New chat
+        </button>
+
+        <div className="navSection">
+          <div className="navTitle">Workspace</div>
+          <div className="navItem active"><MessageSquare size={15} /> Standards Chat</div>
+          <div className="navItem"><ShieldCheck size={15} /> Governance Q&A</div>
+          <div className="navItem"><Search size={15} /> Knowledge Search</div>
+        </div>
+
+        <div className="sideFooter">
+          <div className="statusDot"></div>
+          Azure AI Search + Azure OpenAI
+        </div>
+      </aside>
+
+      <main className="main">
+        <header className="topbar">
+          <div>
+            <h1>Enterprise Engineering AI Assistant</h1>
+            <p>Grounded answers from engineering standards with traceable citations.</p>
+          </div>
         </header>
 
-        <section className="chatCard">
+        <section className="chatArea">
           <div className="messages">
-            {messages.map((m, i) => (
-              <div key={i} className={`messageRow ${m.role}`}>
-                <div className="avatar">{m.role === "assistant" ? "AI" : "You"}</div>
-                <div className="messageBlock">
-                  <div className="bubble">{m.text}</div>
+            {messages.map((m, index) => (
+              <div key={index} className={`message ${m.role}`}>
+                <div className="messageAvatar">{m.role === "assistant" ? "AI" : "You"}</div>
+
+                <div className="messageContent">
+                  <div className="messageText">{m.text}</div>
 
                   {m.role === "assistant" && m.citations?.length > 0 && (
-                    <div className="citationChips">
-                      {m.citations.map((c, idx) => (
+                    <div className="citationRow">
+                      {m.citations.slice(0, 4).map((c, i) => (
                         <button
-                          key={idx}
-                          className="citationChip"
+                          key={i}
+                          className="citationPill"
                           onClick={() => setActiveSources(m.citations)}
                         >
                           <FileText size={13} />
@@ -108,14 +148,28 @@ function App() {
             ))}
 
             {loading && (
-              <div className="messageRow assistant">
-                <div className="avatar">AI</div>
-                <div className="bubble muted">Thinking...</div>
+              <div className="message assistant">
+                <div className="messageAvatar">AI</div>
+                <div className="messageContent">
+                  <div className="messageText thinking">
+                    <span></span><span></span><span></span>
+                  </div>
+                </div>
               </div>
             )}
 
             <div ref={bottomRef} />
           </div>
+
+          {messages.length === 1 && (
+            <div className="suggestions">
+              {suggestedPrompts.map((p, i) => (
+                <button key={i} onClick={() => setQuestion(p)}>
+                  {p}
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="composer">
             <textarea
@@ -124,30 +178,32 @@ function App() {
               onKeyDown={handleKey}
               placeholder="Ask about engineering standards..."
             />
-            <button onClick={askQuestion} disabled={loading || !question.trim()}>
-              <Send size={20} />
+            <button className="sendBtn" onClick={askQuestion} disabled={loading || !question.trim()}>
+              <Send size={18} />
             </button>
           </div>
-        </section>
 
-        <div className="hint">Press Enter to send · Shift + Enter for a new line</div>
+          <div className="hint">Press Enter to send · Shift + Enter for a new line</div>
+        </section>
       </main>
 
-      <aside className="sourcesPanel">
+      <aside className="sources">
         <div className="sourcesHeader">
           <FileText size={18} />
           <h2>Sources</h2>
         </div>
 
         {activeSources.length === 0 ? (
-          <p className="emptySource">Sources will appear here after a grounded answer.</p>
+          <div className="emptySources">
+            Grounding evidence will appear here after an answer is generated.
+          </div>
         ) : (
           <div className="sourceList">
             {activeSources.map((s, i) => (
               <div className="sourceCard" key={i}>
-                <div className="sourceNumber">Source {i + 1}</div>
-                <div className="sourceTitle">{s.document || "Unknown Document"}</div>
-                <div className="sourceMeta">Section: {s.section || "Engineering Standards"}</div>
+                <div className="sourceTag">Source {i + 1}</div>
+                <h3>{s.document || "Unknown Document"}</h3>
+                <p>{s.section || "Engineering Standards"}</p>
               </div>
             ))}
           </div>
