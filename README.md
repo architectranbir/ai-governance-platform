@@ -63,9 +63,6 @@ The solution is designed using a layered enterprise architecture:
 
 ## Request Flow
 
-<img width="2234" height="1486" alt="image" src="https://github.com/user-attachments/assets/3398e315-bb40-4f81-96d5-330119a54ed2" />
-
-
 1. User submits a question via the web UI  
 2. Frontend sends request to `/api/chat`  
 3. Backend receives and processes the request  
@@ -76,8 +73,9 @@ The solution is designed using a layered enterprise architecture:
 8. Backend constructs a grounded prompt  
 9. Azure OpenAI generates a response using retrieved context  
 10. Response is cached in Redis (cost + latency optimization)  
-11. Final response is returned to the UI with citations  
-
+11. Final response is returned to the UI with citations
+    
+<img width="2234" height="1486" alt="image" src="https://github.com/user-attachments/assets/3398e315-bb40-4f81-96d5-330119a54ed2" />
 ---
 
 ## Search Capabilities
