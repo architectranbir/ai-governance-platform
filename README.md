@@ -105,9 +105,8 @@ This aligns with enterprise security and compliance standards.
 ---
 
 ## Caching Strategy
-
-Azure Managed Redis is used as a distributed cache layer:
 <img width="2030" height="252" alt="image" src="https://github.com/user-attachments/assets/bc6e45c2-f6cd-45e3-898c-43066b11b8a8" />
+Azure Managed Redis is used as a distributed cache layer:
 
 - Reduces repeated LLM and retrieval calls (cost + latency optimization)  
 - Improves response time for frequently asked queries  
