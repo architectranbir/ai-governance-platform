@@ -1,4 +1,5 @@
-# Enterprise RAG backend using Azure AI Search + Azure OpenAI with Managed Identity, deduplicated citations, and response metadata.
+# Enterprise RAG backend using Azure AI Search + Azure OpenAI with Managed Identity,
+# supporting keyword search, semantic search, vector search, and hybrid search.
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -7,21 +8,26 @@ import uuid
 
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from azure.search.documents import SearchClient
+from azure.search.documents.models import VectorizedQuery
 from openai import AzureOpenAI
 
 app = FastAPI(
     title="Enterprise Engineering AI Assistant",
-    description="Production-grade RAG assistant with grounded answers, deduplicated citations, and audit-ready metadata.",
-    version="4.1.0"
+    description="Production-grade RAG assistant with hybrid retrieval, grounded answers, deduplicated citations, and audit-ready metadata.",
+    version="5.0.0"
 )
 
 logging.basicConfig(level=logging.INFO)
 
 SEARCH_ENDPOINT = "https://srch-eng-std-chatbot-dev.search.windows.net"
 INDEX_NAME = "rag-1779537879070"
+
 AZURE_OPENAI_ENDPOINT = "https://ranbir-9548-resource.openai.azure.com"
 CHAT_MODEL = "gpt-4.1-mini"
+EMBEDDING_MODEL = "text-embedding-3-large"
+
 TOP_K = 5
+VECTOR_FIELD_NAME = "text_vector"
 
 credential = DefaultAzureCredential()
 
@@ -44,6 +50,7 @@ openai_client = AzureOpenAI(
 
 class ChatRequest(BaseModel):
     question: str
+    search_mode: str = "hybrid"  # keyword | semantic | vector | hybrid
 
 @app.get("/")
 def root():
@@ -53,23 +60,78 @@ def root():
 def health():
     return {"status": "healthy"}
 
+def generate_embedding(text: str):
+    embedding_response = openai_client.embeddings.create(
+        model=EMBEDDING_MODEL,
+        input=text
+    )
+    return embedding_response.data[0].embedding
+
+def run_search(question: str, search_mode: str):
+    mode = search_mode.lower().strip()
+
+    if mode == "keyword":
+        return search_client.search(
+            search_text=question,
+            top=TOP_K
+        )
+
+    if mode == "semantic":
+        return search_client.search(
+            search_text=question,
+            query_type="semantic",
+            semantic_configuration_name="default",
+            top=TOP_K
+        )
+
+    if mode == "vector":
+        query_vector = generate_embedding(question)
+
+        vector_query = VectorizedQuery(
+            vector=query_vector,
+            k_nearest_neighbors=TOP_K,
+            fields=VECTOR_FIELD_NAME
+        )
+
+        return search_client.search(
+            search_text=None,
+            vector_queries=[vector_query],
+            top=TOP_K
+        )
+
+    # Default: hybrid search = keyword + vector + optional semantic ranking
+    query_vector = generate_embedding(question)
+
+    vector_query = VectorizedQuery(
+        vector=query_vector,
+        k_nearest_neighbors=TOP_K,
+        fields=VECTOR_FIELD_NAME
+    )
+
+    return search_client.search(
+        search_text=question,
+        vector_queries=[vector_query],
+        query_type="semantic",
+        semantic_configuration_name="rag-1779537879070-semantic-configuration",
+        top=TOP_K
+    )
+
 @app.post("/api/chat")
 def chat(req: ChatRequest):
     request_id = str(uuid.uuid4())
 
     try:
-        logging.info(f"request_id={request_id} | Incoming question: {req.question}")
-
-        results = search_client.search(
-            search_text=req.question,
-            top=TOP_K
+        logging.info(
+            f"request_id={request_id} | Incoming question: {req.question} | search_mode={req.search_mode}"
         )
+
+        results = run_search(req.question, req.search_mode)
 
         context = ""
         citations = []
         seen_sources = set()
 
-        for i, r in enumerate(results):
+        for r in results:
             chunk = r.get("chunk")
             title = r.get("title") or "EWT Engineering Standards"
             section = r.get("section") or "Engineering Standards"
@@ -106,7 +168,9 @@ Content:
                 "citations": [],
                 "metadata": {
                     "model": CHAT_MODEL,
+                    "embedding_model": EMBEDDING_MODEL,
                     "search_index": INDEX_NAME,
+                    "search_mode": req.search_mode,
                     "top_k": TOP_K
                 }
             }
@@ -159,7 +223,9 @@ CONTEXT:
             "citations": citations,
             "metadata": {
                 "model": CHAT_MODEL,
+                "embedding_model": EMBEDDING_MODEL,
                 "search_index": INDEX_NAME,
+                "search_mode": req.search_mode,
                 "top_k": TOP_K
             }
         }
