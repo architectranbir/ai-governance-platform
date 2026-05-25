@@ -1,5 +1,5 @@
 # Enterprise RAG backend using Azure AI Search + Azure OpenAI with Managed Identity,
-# supporting keyword search, semantic search, vector search, and hybrid search.
+# supporting keyword search, semantic search, vector search, and hybrid search
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
