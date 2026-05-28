@@ -72,7 +72,6 @@ The solution is designed using a layered enterprise architecture:
 9. Azure OpenAI generates a response using the retrieved context.
 10. Response is cached in Redis for cost and latency optimization.
 11. Final response is returned to the UI with citations.
-<img width="2584" height="1604" alt="image" src="https://github.com/user-attachments/assets/40d5e78c-826a-4ff2-a4dc-e314f386ca0f" />
 
 ---
 
